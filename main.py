@@ -1,7 +1,9 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import pandas as pd
 from datetime import datetime
+import base64
+import io
 
 app = FastAPI()
 
@@ -14,9 +16,14 @@ def safe_int_conversion(value, default=0):
         return default
 
 @app.post("/generate-sql/")
-async def generate_sql(file: UploadFile = File(...)):
+async def generate_sql(base64File: str):
     try:
-        df = pd.read_excel(file.file, header=5)
+        # Decode the Base64 string back to bytes
+        file_bytes = base64.b64decode(base64File)
+
+        # Load the bytes into a Pandas dataframe as Excel
+        df = pd.read_excel(io.BytesIO(file_bytes), header=5)
+
         if df.empty:
             return JSONResponse(status_code=400, content={"error": "A planilha está vazia"})
 
@@ -36,12 +43,12 @@ storeNome := '{str(row.get('storeNome', '')).strip()}';
 numeroRegistroJunta := '{str(row.get('numeroRegistroJunta', '')).strip()}';
 SELECT NVL(MAX(GESTOR_ID), 0) + 1 INTO gestorId FROM GESTOR;
 gestorLogo := '{str(row.get('gestorLogo', '')).strip()}';
-store_uri = '{str(row.get('storeUri', '')).strip()}';
+storeUri := '{str(row.get('storeUri', '')).strip()}';
 gestorContactEmail := '{str(row.get('gestorContactEmail', '')).strip()}';
 gestorTabela := {safe_int_conversion(row.get('gestorTabela'))};
 leiloeiroEntityId := {safe_int_conversion(row.get('leiloeiroEntityId'))};
 
--- Fim do script
+-- FIM DADOS CUSTOMIZAVEIS
 """
             sql_scripts.append(script.strip())
 
