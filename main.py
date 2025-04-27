@@ -1,10 +1,19 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from datetime import datetime
 import io
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or restrict to ['https://sql-frontend-nr7c.onrender.com']
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def safe_int_conversion(value, default=0):
     if pd.isna(value) or str(value).strip() == '':
