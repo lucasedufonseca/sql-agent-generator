@@ -29,57 +29,46 @@ async function uploadFile() {
     const output = document.getElementById('output');
     const button = document.querySelector('button');
     output.innerHTML = "";
-    
+
     if (!fileInput.files.length) {
         alert("Please select an Excel (.xlsx) file.");
         return;
     }
 
     const file = fileInput.files[0];
-    const reader = new FileReader();
+    const formData = new FormData();
+    formData.append('file', file);
 
-    reader.onloadstart = function() {
-        output.innerHTML = "<p>🚀 Uploading and processing the spreadsheet, please wait...</p>";
-        button.disabled = true;
-        button.innerText = "Processing...";
-    };
+    output.innerHTML = "<p>🚀 Uploading and processing the spreadsheet, please wait...</p>";
+    button.disabled = true;
+    button.innerText = "Processing...";
 
-    reader.onload = async function(event) {
-        const base64String = event.target.result.split(',')[1];
+    try {
+        const response = await fetch('https://sql-script-api.onrender.com/generate-sql/', {
+            method: 'POST',
+            body: formData
+        });
 
-        try {
-            const response = await fetch('https://sql-script-api.onrender.com/generate-sql/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ base64File: base64String })
+        const data = await response.json();
+        output.innerHTML = "";
+
+        if (data.scripts && Array.isArray(data.scripts)) {
+            data.scripts.forEach((script, index) => {
+                output.innerHTML += `<div class="script-title">🟢 Script ${index + 1}</div>`;
+                output.innerHTML += `<pre><code>${script}</code></pre>`;
             });
-
-            const data = await response.json();
-            output.innerHTML = ""; // Clear 'Uploading...' message
-
-            if (data.scripts && Array.isArray(data.scripts)) {
-                data.scripts.forEach((script, index) => {
-                    output.innerHTML += `<div class="script-title">🟢 Script ${index + 1}</div>`;
-                    output.innerHTML += `<pre><code>${script}</code></pre>`;
-                });
-                button.innerText = "Generate Scripts";
-                button.disabled = false;
-            } else {
-                output.innerHTML = `<p>⚠️ Error generating scripts: ${JSON.stringify(data)}</p>`;
-                button.innerText = "Generate Scripts";
-                button.disabled = false;
-            }
-        } catch (error) {
-            output.innerHTML = `<p>❌ Error: ${error.message}</p>`;
-            button.innerText = "Generate Scripts";
-            button.disabled = false;
+        } else {
+            output.innerHTML = `<p>⚠️ Error generating scripts: ${JSON.stringify(data)}</p>`;
         }
-    };
 
-    reader.readAsDataURL(file);
+    } catch (error) {
+        output.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+    }
+
+    button.innerText = "Generate Scripts";
+    button.disabled = false;
 }
 </script>
-
 
 </body>
 </html>
