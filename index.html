@@ -27,8 +27,9 @@
 async function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const output = document.getElementById('output');
+    const button = document.querySelector('button');
     output.innerHTML = "";
-
+    
     if (!fileInput.files.length) {
         alert("Please select an Excel (.xlsx) file.");
         return;
@@ -36,6 +37,12 @@ async function uploadFile() {
 
     const file = fileInput.files[0];
     const reader = new FileReader();
+
+    reader.onloadstart = function() {
+        output.innerHTML = "<p>🚀 Uploading and processing the spreadsheet, please wait...</p>";
+        button.disabled = true;
+        button.innerText = "Processing...";
+    };
 
     reader.onload = async function(event) {
         const base64String = event.target.result.split(',')[1];
@@ -48,23 +55,31 @@ async function uploadFile() {
             });
 
             const data = await response.json();
+            output.innerHTML = ""; // Clear 'Uploading...' message
 
             if (data.scripts && Array.isArray(data.scripts)) {
                 data.scripts.forEach((script, index) => {
-                    output.innerHTML += `<div class="script-title">\u{1F7E2} Script ${index + 1}</div>`;
+                    output.innerHTML += `<div class="script-title">🟢 Script ${index + 1}</div>`;
                     output.innerHTML += `<pre><code>${script}</code></pre>`;
                 });
+                button.innerText = "Generate Scripts";
+                button.disabled = false;
             } else {
-                output.innerHTML = `<p>Erro ao gerar scripts: ${JSON.stringify(data)}</p>`;
+                output.innerHTML = `<p>⚠️ Error generating scripts: ${JSON.stringify(data)}</p>`;
+                button.innerText = "Generate Scripts";
+                button.disabled = false;
             }
         } catch (error) {
-            output.innerHTML = `<p>Erro: ${error.message}</p>`;
+            output.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+            button.innerText = "Generate Scripts";
+            button.disabled = false;
         }
     };
 
     reader.readAsDataURL(file);
 }
 </script>
+
 
 </body>
 </html>
