@@ -1212,7 +1212,15 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
         missing_or_wrong = []
 
         for col_letter, expected_name in expected_headers.items():
-            col_index = ord(col_letter) - ord('A')
+            def column_letter_to_index(col_letter):
+                index = 0
+                for char in col_letter:
+                    index = index * 26 + (ord(char.upper()) - ord('A') + 1)
+                return index - 1  # zero-based index
+            
+            col_index = column_letter_to_index(col_letter)
+
+
             if col_index >= len(df.columns):
                 missing_or_wrong.append(f"Coluna {col_letter} ({expected_name}) está ausente")
                 continue
@@ -1272,4 +1280,4 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
