@@ -1162,34 +1162,31 @@ def safe_int_conversion(value, default=0):
         return int(float(value))
     except (ValueError, TypeError):
         return default
+    
+def render_sql_script(config: StoreConfig) -> str:
+    template = get_sql_template(config.origemLoja)
+    if not template:
+        raise ValueError(f"Template not found for origem_loja: {config.origemLoja}")
+
+    return template.format(
+        gestorEntityId=config.gestorEntityId,
+        gestorNome=config.gestorNome,
+        storeNome=config.storeNome,
+        numeroRegistroJunta=config.numeroRegistroJunta or '',
+        gestorId=config.gestorId or "NULL",
+        gestorLogo=config.gestorLogo,
+        storeUri=config.storeUri,
+        gestorContactEmail=config.gestorContactEmail,
+        gestorTabela=config.gestorTabela,
+        leiloeiroEntityId=config.leiloeiroEntityId or "NULL",
+        isencaoDeTaxa=config.isencaoDeTaxa
+    )
 
 @app.post("/generate-sql/")
 async def generate_sql(config: StoreConfig):
     try:
-        template = get_sql_template(config.origemLoja)
-        if not template:
-            return JSONResponse(
-                status_code=400,
-                content={"error": f"Template not found for origem_loja: {config.origemLoja}"}
-            )
-
-        # Format the template with the provided configuration
-        sql_script = template.format(
-            gestorEntityId=config.gestorEntityId,
-            gestorNome=config.gestorNome,
-            storeNome=config.storeNome,
-            numeroRegistroJunta=config.numeroRegistroJunta or '',
-            gestorId=config.gestorId or "NULL",
-            gestorLogo=config.gestorLogo,
-            storeUri=config.storeUri,
-            gestorContactEmail=config.gestorContactEmail,
-            gestorTabela=config.gestorTabela,
-            leiloeiroEntityId=config.leiloeiroEntityId or "NULL",
-            isencaoDeTaxa=config.isencaoDeTaxa
-        )
-
+        sql_script = render_sql_script(config)
         return {"script": sql_script}
-
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
@@ -1255,10 +1252,11 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
                 )
 
                 result = await generate_sql(config)
-                if "error" in result:
-                    validation_errors.append(f"Linha {index + 7}: {result['error']}")
-                else:
-                    sql_scripts.append(result["script"])
+                try:
+                    sql_script = render_sql_script(config)
+                    sql_scripts.append(sql_script)
+                except Exception as e:
+                    validation_errors.append(f"Linha {index + 7}: {str(e)}")
 
             except Exception as e:
                 validation_errors.append(f"Linha {index + 7}: {str(e)}")
@@ -1274,4 +1272,4 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
