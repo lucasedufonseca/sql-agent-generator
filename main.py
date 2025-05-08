@@ -1195,8 +1195,7 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=5)
-
-        df = df.reset_index(drop=True)  # Garante que o índice comece do zero
+        df = df.reset_index(drop=True)
 
         expected_headers = {
             'C': 'gestorEntityId',
@@ -1212,17 +1211,13 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
         }
 
         missing_or_wrong = []
-
         for col_letter, expected_name in expected_headers.items():
             def column_letter_to_index(col_letter):
                 index = 0
                 for char in col_letter:
                     index = index * 26 + (ord(char.upper()) - ord('A') + 1)
-                return index - 1  # zero-based index
-            
+                return index - 1
             col_index = column_letter_to_index(col_letter)
-
-
             if col_index >= len(df.columns):
                 missing_or_wrong.append(f"Coluna {col_letter} ({expected_name}) está ausente")
                 continue
@@ -1244,7 +1239,8 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
         for index, row in df.iterrows():
             store_nome = row.get('storeNome')
-            if store_nome is None or str(store_nome).strip() == '':
+            # Correção para garantir que 'nan' ou vazio seja ignorado
+            if pd.isna(store_nome) or str(store_nome).strip().lower() == 'nan' or str(store_nome).strip() == '':
                 continue
             store_nome = str(store_nome).strip()
 
@@ -1279,6 +1275,7 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 if __name__ == "__main__":
     import uvicorn
