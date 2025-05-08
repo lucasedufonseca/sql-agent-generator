@@ -1259,10 +1259,9 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
                     origemLoja=str(row.get('origemLoja', '')).strip()
                 )
 
-                result = await generate_sql(config)
                 try:
-                    sql_script = render_sql_script(config)
-                    sql_scripts.append(sql_script)
+                    sql_result = render_sql_script(config)
+                    sql_scripts.append(sql_result)
                 except Exception as e:
                     validation_errors.append(f"Linha {index + 7}: {str(e)}")
 
@@ -1280,4 +1279,4 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
