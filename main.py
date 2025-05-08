@@ -1196,6 +1196,8 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
         contents = await file.read()
         df = pd.read_excel(io.BytesIO(contents), header=5)
 
+        df = df.reset_index(drop=True)  # Garante que o índice comece do zero
+
         expected_headers = {
             'C': 'gestorEntityId',
             'D': 'gestorNome',
@@ -1241,9 +1243,10 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
         validation_errors = []
 
         for index, row in df.iterrows():
-            store_nome = str(row.get('storeNome', '')).strip()
-            if not store_nome:
+            store_nome = row.get('storeNome')
+            if store_nome is None or str(store_nome).strip() == '':
                 continue
+            store_nome = str(store_nome).strip()
 
             try:
                 config = StoreConfig(
