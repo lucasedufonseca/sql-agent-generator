@@ -1202,11 +1202,11 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
             'E': 'storeNome',
             'G': 'numeroRegistroJunta',
             'K': 'gestorLogo',
-            'M': 'storeUri',
-            'N': 'gestorContactEmail',
-            'O': 'gestorTabela',
-            'Q': 'leiloeiroEntityId',
-            'B': 'origemLoja'
+            'N': 'storeUri',
+            'O': 'gestorContactEmail',
+            'P': 'gestorTabela',
+            'R': 'leiloeiroEntityId',
+            'AF': 'origemLoja'
         }
 
         missing_or_wrong = []
@@ -1272,4 +1272,4 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
