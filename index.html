@@ -137,14 +137,18 @@
 
         if (data.scripts && Array.isArray(data.scripts)) {
           const zip = new JSZip();
+          let scriptsHtml = "";
+
           data.scripts.forEach((script, index) => {
             const filename = `script_${index + 1}.sql`;
             zip.file(filename, script);
 
-            output.innerHTML += `<div class='script-title'>🟢 Script ${index + 1}</div>`;
-            output.innerHTML += `<pre><code>${script}</code></pre>`;
-            output.innerHTML += `<a class='download-btn' href='data:text/plain;charset=utf-8,${encodeURIComponent(script)}' download='${filename}'>Download ${filename}</a><br>`;
+            scriptsHtml += `<div class='script-title'>🟢 Script ${index + 1}</div>`;
+            scriptsHtml += `<pre><code>${script}</code></pre>`;
+            scriptsHtml += `<a class='download-btn' href='data:text/plain;charset=utf-8,${encodeURIComponent(script)}' download='${filename}'>Download ${filename}</a><br>`;
           });
+
+          output.innerHTML = scriptsHtml;
 
           zip.generateAsync({ type: "blob" }).then(function (content) {
             const zipUrl = URL.createObjectURL(content);
