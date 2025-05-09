@@ -153,13 +153,19 @@
           let scriptsHtml = "";
     
           data.scripts.forEach((script, index) => {
-            const filename = `script_${index + 1}.sql`;
-            zip.file(filename, script);
-    
-            scriptsHtml += `<div class='script-title'>🟢 Script ${index + 1}</div>`;
-            scriptsHtml += `<pre><code>${script}</code></pre>`;
-            scriptsHtml += `<a class='download-btn' href='data:text/plain;charset=utf-8,${encodeURIComponent(script)}' download='${filename}'>Download ${filename}</a><br>`;
-          });
+          const filename = `script_${index + 1}.sql`;
+          zip.file(filename, script);
+        
+          const scriptId = `scriptText_${index}`;
+        
+          scriptsHtml += `<div class='script-title'>🟢 Script ${index + 1}</div>`;
+          scriptsHtml += `<pre><code id="${scriptId}">${script}</code></pre>`;
+          scriptsHtml += `
+            <a class='download-btn' href='data:text/plain;charset=utf-8,${encodeURIComponent(script)}' download='${filename}'>Download ${filename}</a>
+            <button onclick="copyToClipboard('${scriptId}')" class="download-btn" style="background:#007bff;">Copy Script</button><br><br>
+          `;
+        });
+
     
           output.innerHTML += scriptsHtml;
     
@@ -179,6 +185,16 @@
       button.innerText = "Generate Scripts";
       button.disabled = false;
     }
+
+    function copyToClipboard(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Script copied to clipboard!");
+      }).catch(err => {
+        alert("Failed to copy script: " + err);
+      });
+    }
+
 
   </script>
 </body>
