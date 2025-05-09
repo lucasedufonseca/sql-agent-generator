@@ -63,7 +63,7 @@ BEGIN
     gestorNome := '{gestorNome}';
     storeNome := '{storeNome}';
     numeroRegistroJunta := '{numeroRegistroJunta}';
-    SELECT NVL(MAX(GESTOR_ID), 0) + 1 INTO gestorId FROM GESTOR;
+    {gestorId_block}
     gestorLogo := '{gestorLogo}';
     storeUri := '{storeUri}';
     gestorContactEmail := '{gestorContactEmail}';
@@ -303,7 +303,7 @@ BEGIN
     gestorNome := '{gestorNome}';
     storeNome := '{storeNome}';
     numeroRegistroJunta := '{numeroRegistroJunta}';
-    gestorId := {gestorId};
+    {gestorId_block}
     gestorLogo := '{gestorLogo}';
     storeUri := '{storeUri}';
     gestorContactEmail := '{gestorContactEmail}';
@@ -499,7 +499,7 @@ BEGIN
     gestorNome := '{gestorNome}';
     storeNome := '{storeNome}';
     numeroRegistroJunta := '{numeroRegistroJunta}';
-    SELECT NVL(MAX(GESTOR_ID), 0) + 1 INTO gestorId FROM GESTOR;
+    {gestorId_block}
     gestorLogo := '{gestorLogo}';
     storeUri := '{storeUri}';
     gestorContactEmail := '{gestorContactEmail}';
@@ -824,7 +824,7 @@ BEGIN
     gestorNome := '{gestorNome}';
     storeNome := '{storeNome}';
     numeroRegistroJunta := '{numeroRegistroJunta}';
-    gestorId := {gestorId};
+    {gestorId_block}
     gestorLogo := '{gestorLogo}';
     storeUri := '{storeUri}';
     gestorContactEmail := '{gestorContactEmail}';
@@ -1086,7 +1086,7 @@ BEGIN
     gestorNome := '{gestorNome}';
     storeNome := '{storeNome}';
     numeroRegistroJunta := '{numeroRegistroJunta}';
-    gestorId := {gestorId};
+    {gestorId_block}
     gestorLogo := '{gestorLogo}';
     storeUri := '{storeUri}';
     gestorContactEmail := '{gestorContactEmail}';
@@ -1180,19 +1180,25 @@ def render_sql_script(config: StoreConfig) -> str:
     if not template:
         raise ValueError(f"Template not found for origem_loja: {config.origemLoja}")
 
-    return template.format(
-        gestorEntityId=config.gestorEntityId,
-        gestorNome=config.gestorNome,
-        storeNome=config.storeNome,
-        numeroRegistroJunta=config.numeroRegistroJunta or '',
-        gestorId=config.gestorId or "NULL",
-        gestorLogo=config.gestorLogo,
-        storeUri=config.storeUri,
-        gestorContactEmail=config.gestorContactEmail,
-        gestorTabela=config.gestorTabela,
-        leiloeiroEntityId=config.leiloeiroEntityId or "NULL",
-        isencaoDeTaxa=config.isencaoDeTaxa
-    )
+    substitutions = {
+        "gestorEntityId": config.gestorEntityId,
+        "gestorNome": config.gestorNome,
+        "storeNome": config.storeNome,
+        "numeroRegistroJunta": config.numeroRegistroJunta or '',
+        "gestorLogo": config.gestorLogo,
+        "storeUri": config.storeUri,
+        "gestorContactEmail": config.gestorContactEmail,
+        "gestorTabela": config.gestorTabela,
+        "leiloeiroEntityId": config.leiloeiroEntityId or "NULL",
+        "isencaoDeTaxa": config.isencaoDeTaxa
+    }
+
+    if config.gestorId is not None:
+        substitutions["gestorId_block"] = f"gestorId := {config.gestorId};"
+    else:
+        substitutions["gestorId_block"] = "SELECT NVL(MAX(GESTOR_ID), 0) + 1 INTO gestorId FROM GESTOR;"
+
+    return template.format(**substitutions)
 
 
 @app.post("/generate-sql-from-excel/")
