@@ -1163,8 +1163,20 @@ def safe_int_conversion(value, default=0):
     except (ValueError, TypeError):
         return default
     
+def normalize_origem_loja(value: str) -> str:
+    mapa = {
+        "canal do campo": "canal_do_campo",
+        "lw": "lw",
+        "nws": "nws",
+        "sold": "sold",
+        "hispanico": "hispanico"
+    }
+    return mapa.get(value.strip().lower(), value.strip().lower())
+
+    
 def render_sql_script(config: StoreConfig) -> str:
-    template = get_sql_template(config.origemLoja)
+    origem_normalizada = normalize_origem_loja(config.origemLoja)
+    template = get_sql_template(origem_normalizada)
     if not template:
         raise ValueError(f"Template not found for origem_loja: {config.origemLoja}")
 
@@ -1181,6 +1193,7 @@ def render_sql_script(config: StoreConfig) -> str:
         leiloeiroEntityId=config.leiloeiroEntityId or "NULL",
         isencaoDeTaxa=config.isencaoDeTaxa
     )
+
 
 @app.post("/generate-sql-from-excel/")
 async def generate_sql_from_excel(file: UploadFile = File(...)):
