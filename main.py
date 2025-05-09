@@ -1229,28 +1229,48 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
                 validation_errors.append(msg)
                 continue
 
-            try:
-                config = StoreConfig(
-                    gestorEntityId=safe_int_conversion(row.get('gestorEntityId')),
-                    gestorNome=str(row.get('gestorNome', '')).strip(),
-                    storeNome=str(store_nome).strip(),
-                    numeroRegistroJunta=str(row.get('numeroRegistroJunta', '')).strip(),
-                    gestorLogo=str(row.get('gestorLogo', '')).strip(),
-                    storeUri=str(row.get('storeUri', '')).strip(),
-                    gestorContactEmail=str(row.get('gestorContactEmail', '')).strip(),
-                    gestorTabela=safe_int_conversion(row.get('gestorTabela')),
-                    leiloeiroEntityId=str(row.get('leiloeiroEntityId', '')).strip(),
-                    origemLoja=str(row.get('origemLoja', '')).strip()
-                )
+            # Decide se vai usar numeroRegistroJunta com base em vaiTerRegistroNaJunta
+        numeroRegistroJunta = ''
+        if str(row.get('vaiTerRegistroNaJunta')).strip().lower() == 'sim':
+            numeroRegistroJunta = str(row.get('numeroRegistroJunta', '')).strip()
 
-                sql_result = render_sql_script(config)
-                sql_scripts.append(sql_result)
-                print(f"[SUCESSO] Script gerado para linha {index + 7} - Loja: {store_nome}")
+        # Decide se o gestorId será fixo ou calculado
+        gestorId = None
+        if str(row.get('gestorExiste')).strip().lower() == 'sim':
+            gestorId = safe_int_conversion(row.get('gestorId'))
+        else:
+            gestorId = None  # Isso fará o template usar "SELECT NVL..." no lugar
 
-            except Exception as e:
-                error_msg = f"[FALHA] Linha {index + 7} - Erro ao gerar script: {str(e)}"
-                print(error_msg)
-                validation_errors.append(error_msg)
+        # Decide se o leiloeiroEntityId será usado com base em vaiTerLeiloeiro
+        leiloeiroEntityId = ''
+        if str(row.get('vaiTerLeiloeiro')).strip().lower() == 'sim':
+            leiloeiroEntityId = str(row.get('leiloeiroEntityId', '')).strip()
+
+
+        try:
+            config = StoreConfig(
+            gestorEntityId=safe_int_conversion(row.get('gestorEntityId')),
+            gestorNome=str(row.get('gestorNome', '')).strip(),
+            storeNome=str(store_nome).strip(),
+            numeroRegistroJunta=numeroRegistroJunta,
+            gestorId=gestorId,
+            gestorLogo=str(row.get('gestorLogo', '')).strip(),
+            storeUri=str(row.get('storeUri', '')).strip(),
+            gestorContactEmail=str(row.get('gestorContactEmail', '')).strip(),
+            gestorTabela=safe_int_conversion(row.get('gestorTabela')),
+            leiloeiroEntityId=leiloeiroEntityId,
+            origemLoja=str(row.get('origemLoja', '')).strip()
+            )
+
+                    
+            sql_result = render_sql_script(config)
+            sql_scripts.append(sql_result)
+            print(f"[SUCESSO] Script gerado para linha {index + 7} - Loja: {store_nome}")
+
+        except Exception as e:
+            error_msg = f"[FALHA] Linha {index + 7} - Erro ao gerar script: {str(e)}"
+            print(error_msg)
+            validation_errors.append(error_msg)
 
         result = {"scripts": sql_scripts}
         if validation_errors:
