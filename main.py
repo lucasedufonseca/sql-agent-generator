@@ -1182,14 +1182,6 @@ def render_sql_script(config: StoreConfig) -> str:
         isencaoDeTaxa=config.isencaoDeTaxa
     )
 
-@app.post("/generate-sql/")
-async def generate_sql(config: StoreConfig):
-    try:
-        sql_script = render_sql_script(config)
-        return {"script": sql_script}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
 @app.post("/generate-sql-from-excel/")
 async def generate_sql_from_excel(file: UploadFile = File(...)):
     try:
@@ -1197,58 +1189,38 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
         df = pd.read_excel(io.BytesIO(contents), header=5)
         df = df.reset_index(drop=True)
 
-        expected_headers = {
-            'C': 'gestorEntityId',
-            'D': 'gestorNome',
-            'E': 'storeNome',
-            'G': 'numeroRegistroJunta',
-            'K': 'gestorLogo',
-            'N': 'storeUri',
-            'O': 'gestorContactEmail',
-            'P': 'gestorTabela',
-            'R': 'leiloeiroEntityId',
-            'AF': 'origemLoja'
-        }
-
-        missing_or_wrong = []
-        for col_letter, expected_name in expected_headers.items():
-            def column_letter_to_index(col_letter):
-                index = 0
-                for char in col_letter:
-                    index = index * 26 + (ord(char.upper()) - ord('A') + 1)
-                return index - 1
-            col_index = column_letter_to_index(col_letter)
-            if col_index >= len(df.columns):
-                missing_or_wrong.append(f"Coluna {col_letter} ({expected_name}) está ausente")
-                continue
-            actual = str(df.columns[col_index]).strip()
-            if actual != expected_name:
-                missing_or_wrong.append(f"Coluna {col_letter} deve ser '{expected_name}', mas está como '{actual}'")
-
-        if missing_or_wrong:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Cabeçalhos incorretos na planilha", "detalhes": missing_or_wrong}
-            )
-
-        if df.empty:
-            return JSONResponse(status_code=400, content={"error": "A planilha está vazia"})
-
         sql_scripts = []
         validation_errors = []
 
         for index, row in df.iterrows():
             store_nome = row.get('storeNome')
-            # Correção para garantir que 'nan' ou vazio seja ignorado
             if pd.isna(store_nome) or str(store_nome).strip().lower() == 'nan' or str(store_nome).strip() == '':
+                print(f"[IGNORADA] Linha {index + 7} - storeNome vazio ou inválido.")
                 continue
-            store_nome = str(store_nome).strip()
+
+            # Verificação dos campos obrigatórios
+            required_fields = {
+                "gestorEntityId": row.get("gestorEntityId"),
+                "gestorNome": row.get("gestorNome"),
+                "gestorLogo": row.get("gestorLogo"),
+                "storeUri": row.get("storeUri"),
+                "gestorContactEmail": row.get("gestorContactEmail"),
+                "gestorTabela": row.get("gestorTabela"),
+                "origemLoja": row.get("origemLoja"),
+            }
+
+            missing_fields = [key for key, val in required_fields.items() if pd.isna(val) or str(val).strip() == ""]
+            if missing_fields:
+                msg = f"[ERRO] Linha {index + 7} - Campos obrigatórios ausentes: {', '.join(missing_fields)}"
+                print(msg)
+                validation_errors.append(msg)
+                continue
 
             try:
                 config = StoreConfig(
                     gestorEntityId=safe_int_conversion(row.get('gestorEntityId')),
                     gestorNome=str(row.get('gestorNome', '')).strip(),
-                    storeNome=store_nome,
+                    storeNome=str(store_nome).strip(),
                     numeroRegistroJunta=str(row.get('numeroRegistroJunta', '')).strip(),
                     gestorLogo=str(row.get('gestorLogo', '')).strip(),
                     storeUri=str(row.get('storeUri', '')).strip(),
@@ -1258,14 +1230,14 @@ async def generate_sql_from_excel(file: UploadFile = File(...)):
                     origemLoja=str(row.get('origemLoja', '')).strip()
                 )
 
-                try:
-                    sql_result = render_sql_script(config)
-                    sql_scripts.append(sql_result)
-                except Exception as e:
-                    validation_errors.append(f"Linha {index + 7}: {str(e)}")
+                sql_result = render_sql_script(config)
+                sql_scripts.append(sql_result)
+                print(f"[SUCESSO] Script gerado para linha {index + 7} - Loja: {store_nome}")
 
             except Exception as e:
-                validation_errors.append(f"Linha {index + 7}: {str(e)}")
+                error_msg = f"[FALHA] Linha {index + 7} - Erro ao gerar script: {str(e)}"
+                print(error_msg)
+                validation_errors.append(error_msg)
 
         result = {"scripts": sql_scripts}
         if validation_errors:
