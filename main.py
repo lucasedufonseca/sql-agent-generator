@@ -51,27 +51,25 @@ DECLARE
     gestorContactEmail VARCHAR2(4000);
     gestorTabela NUMBER;
     codCondicaoComercial NUMBER;
+    leiloeiroEntityId NUMBER;
     isencaoDeTaxa VARCHAR2(1);
     v_exists NUMBER;
-    
-    BEGIN
-    
+BEGIN
     gestorPortal := 2;
-    usuarioIntegracao1 :=  'nws.integracao';
-    usuarioIntegracao2 :=  'nws.integracao2';
+    usuarioIntegracao1 := 'nws.integracao';
+    usuarioIntegracao2 := 'nws.integracao2';
     
     -- INICIO DADOS CUSTOMIZAVEIS
-    gestorEntityId := 447789; --ID de cadastro PF/PJ responsável pelo gestor
-    gestorNome := 'VIVIANE GARZON CORRÊA'; --Nome comercial desejado pelo gestor
-    storeNome := 'Bolsa de Leilõess'; --Nome comercial para a loja
-    numeroRegistroJunta := '387'; --Num. registro do leiloeiro (se não for informado no ticket remover essa linha)
-    SELECT NVL(MAX(GESTOR_ID), 0) + 1 INTO gestorId FROM GESTOR; -- Valor obtido do select da tabela gestor 
-    gestorLogo := 'https://static.s4bdigital.net/logos_empresas/bolsa_de_leiloes.png'; --Logo da loja no CDN SBWS
-    storeUri := 'http://www.bolsadeleiloesbh.com.br/'; --URL da loja manter sempre protocolo + hostname
-    gestorContactEmail := 'atendimentosp@bolsadeleiloes.com.br'; --E-mail de contato para a loja
-    gestorTabela := 4; --Tabela informada no ticket 1, 2 ou 3
-    isencaoDeTaxa:= 'N';
-    
+    gestorEntityId := {gestorEntityId};
+    gestorNome := '{gestorNome}';
+    storeNome := '{storeNome}';
+    numeroRegistroJunta := '{numeroRegistroJunta}';
+    {gestorId_block}
+    gestorLogo := '{gestorLogo}';
+    storeUri := '{storeUri}';
+    gestorContactEmail := '{gestorContactEmail}';
+    gestorTabela := {gestorTabela};
+    leiloeiroEntityId := '{leiloeiroEntityId}';
     -- FIM DADOS CUSTOMIZAVEIS
     
     -- ETAPA 1 - CRIAR GESTOR
